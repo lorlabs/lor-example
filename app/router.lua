@@ -1,28 +1,21 @@
--- 业务路由管理
-local userRouter = require("app.routes.user")
-local testRouter = require("app.routes.test")
+local authRouter = require("app.routes.auth")
+local todoRouter = require("app.routes.todo")
 
 return function(app)
 
-    -- group router, 对以`/user`开始的请求做过滤处理
-    app:use("/user", userRouter())
+    app:use("/auth", authRouter())
+    app:use("/todo", todoRouter())
 
-    -- group router, 对以`/test`开始的请求做过滤处理
-    app:use("/test", testRouter())
 
-    -- 除使用group router外，也可单独进行路由处理，支持get/post/put/delete...
-
-    -- welcome to lor!
     app:get("/", function(req, res, next)
-        res:send("hi! welcome to lor framework.")
+        if req.session and req.session.username then
+            res:redirect("/todo/index")
+        else
+            res:redirect("/auth/login")
+        end
     end)
 
-    -- hello world!
-    app:get("/index", function(req, res, next)
-        res:send("hello world!")
-    end)
-
-    -- render html, visit "/view" or "/view?name=foo&desc=bar
+  
     app:get("/view", function(req, res, next)
         local data = {
             name =  req.query.name or "lor",
@@ -30,5 +23,6 @@ return function(app)
         }
         res:render("index", data)
     end)
+
 end
 

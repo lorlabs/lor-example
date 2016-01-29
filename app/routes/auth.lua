@@ -16,20 +16,17 @@ authRouter:post("/login", function(req, res, next)
 
     local isExist = false
     for i, v in ipairs(users) do
-
         if v.username == username and v.password == password then
             req.session.set("username", username)
             isExist = true
-            res:render("todo",{
-                username = username
-            })
+            res:redirect("/todo/index")
             return
         end
     end
 
     if not isExist then
-        res:render("error", {
-            msg = "Wrong username or password! Please check."
+        res:redirect("/error/",{
+            errMsg = "Wrong username or password! Please check."
         })
     end
 end)
@@ -37,7 +34,7 @@ end)
 
 authRouter:get("/logout", function(req, res, next)
     req.session.destroy()
-    ngx.location.capture("/auth/login")
+    res:redirect("/auth/login")
 end)
 
 

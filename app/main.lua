@@ -1,7 +1,10 @@
 local lor = require("lor.index")
 local session_middleware = require("lor.lib.middleware.session")
-local router = require("app.router")
+local check_login_middleware = require("app.middleware.check_login")
 local whitelist = require("app.config.config").whitelist
+local router = require("app.router")
+
+
 local app = lor()
 
 app:conf("view engine", "tmpl")
@@ -17,42 +20,21 @@ app:use(function(req, res, next)
 end)
 
 -- intercepter: login or not
-app:use(function(req, res, next)
-	local requestPath = req.path
-    local inWhitelist = false
-    for i, v in ipairs(whitelist) do
-        if requestPath == v then
-            inWhitelist = true
-        end
-    end
+app:use(check_login_middleware(whitelist))
 
-    if inWhitelist then
-        next()
-    else
-        if req.session and req.session.username then
-            next()
-        else
-            res:redirect("/auth/login")
-        end
-    end
-end)
-
-
-
-router(app) -- 业务路由处理
-
+router(app) -- business routers and routes
 
 -- 404 error
 app:use(function(req, res, next)
     if req:isFound() ~= true then
-        res:status(404):send("sorry, not found.")
+        res:status(404):send("404! sorry, page not found.")
     end
 end)
 
-
--- 错误处理插件
+-- error handle middleware
 app:erroruse(function(err, req, res, next)
-    res:status(500):send(err)
+	ngx.log(500, err)
+    res:status(500):send("unknown error")
 end)
 
 app:run()

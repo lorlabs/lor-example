@@ -12,7 +12,8 @@ return {
 	},
 
 	whitelist = {
-		"/auth/login"
+		"/auth/login", -- login page
+		"/error/" -- error page
 	}
 
 

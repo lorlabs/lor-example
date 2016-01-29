@@ -1,129 +1,159 @@
-/*global jQuery, Handlebars, Router */
-jQuery(function ($) {
-	'use strict';
+var ENTER_KEY = 13;
+var ESCAPE_KEY = 27;
 
-	Handlebars.registerHelper('eq', function (a, b, options) {
-		return a === b ? options.fn(this) : options.inverse(this);
-	});
+var util = {
+	uuid: function () {
+		/*jshint bitwise:false */
+		var i, random;
+		var uuid = '';
 
-	var ENTER_KEY = 13;
-	var ESCAPE_KEY = 27;
-
-	var util = {
-		uuid: function () {
-			/*jshint bitwise:false */
-			var i, random;
-			var uuid = '';
-
-			for (i = 0; i < 32; i++) {
-				random = Math.random() * 16 | 0;
-				if (i === 8 || i === 12 || i === 16 || i === 20) {
-					uuid += '-';
-				}
-				uuid += (i === 12 ? 4 : (i === 16 ? (random & 3 | 8) : random)).toString(16);
+		for (i = 0; i < 32; i++) {
+			random = Math.random() * 16 | 0;
+			if (i === 8 || i === 12 || i === 16 || i === 20) {
+				uuid += '-';
 			}
-
-			return uuid;
-		},
-		pluralize: function (count, word) {
-			return count === 1 ? word : word + 's';
-		},
-		store: function (namespace, data) {
-			if (arguments.length > 1) {
-				return localStorage.setItem(namespace, JSON.stringify(data));
-			} else {
-				var store = localStorage.getItem(namespace);
-				return (store && JSON.parse(store)) || [];
-			}
+			uuid += (i === 12 ? 4 : (i === 16 ? (random & 3 | 8) : random)).toString(16);
 		}
-	};
 
-	var App = {
-		init: function () {
-			this.todos = util.store('todos-jquery');
-			this.todoTemplate = Handlebars.compile($('#todo-template').html());
-			this.footerTemplate = Handlebars.compile($('#footer-template').html());
-			this.bindEvents();
+		return uuid;
+	},
+	pluralize: function (count, word) {
+		return count === 1 ? word : word + 's';
+	}
+};
 
-			new Router({
-				'/:filter': function (filter) {
-					this.filter = filter;
-					this.render();
-				}.bind(this)
-			}).init('/all');
+
+(function (L) {
+    var _this = null;
+    L.Todo = L.Todo || {};
+    _this = L.Todo = {
+        todo: [],
+        filter: "all",
+
+        init: function () {
+			_this.todos = [];
+			_this.todoTemplate = function(todos){
+				console.dir(todos)
+				var data = {
+					list: todos
+				};
+				var tpl = $('#todo-template').html();
+				return juicer(tpl, data);
+			}
+			_this.footerTemplate =  function(data){
+				var tpl = $('#footer-template').html();
+				return juicer(tpl, data)
+			}
+
+			_this.bindEvents();
+			_this.getByType("all");
+			
 		},
+
+		getByType: function(filter){
+			var self = _this;
+			$.ajax({
+                url : '/todo/find/'+filter,
+                type : 'get',
+                data : {},
+                dataType : 'json',
+                success : function(result) {
+          			if(result.success ){
+          				self.todos = result.data;
+          				self.filter = filter
+          				self.render();
+          				self.renderFooter();
+          			}else{
+          				self.tip(result.msg);
+          			}
+                },
+                error : function() {
+                	self.tip("error to find todos");
+                }
+            });
+		},
+
+		tip: function(msg){
+			$('#tipMsg').text("Tip: " + msg).show();
+		},
+
 		bindEvents: function () {
-			$('#new-todo').on('keyup', this.create.bind(this));
-			$('#toggle-all').on('change', this.toggleAll.bind(this));
-			$('#footer').on('click', '#clear-completed', this.destroyCompleted.bind(this));
+			$('#new-todo').on('keyup', _this.create.bind(_this));
+			$('#toggle-all').on('change', _this.toggleAll.bind(_this));
+			$('#footer').on('click', '#clear-completed', _this.destroyCompleted.bind(_this));
 			$('#todo-list')
-				.on('change', '.toggle', this.toggle.bind(this))
-				.on('dblclick', 'label', this.edit.bind(this))
-				.on('keyup', '.edit', this.editKeyup.bind(this))
-				.on('focusout', '.edit', this.update.bind(this))
-				.on('click', '.destroy', this.destroy.bind(this));
+				.on('change', '.toggle', _this.toggle.bind(_this))
+				.on('dblclick', 'label', _this.edit.bind(_this))
+				.on('keyup', '.edit', _this.editKeyup.bind(_this))
+				.on('focusout', '.edit', _this.update)
+				.on('click', '.destroy', _this.destroy.bind(_this));
+
+			$(document).on('click', '#filters li a',function(){
+				var filter = $(this).attr("data-filter")
+				_this.getByType(filter);
+			});
 		},
 		render: function () {
-			var todos = this.getFilteredTodos();
-			$('#todo-list').html(this.todoTemplate(todos));
+			var todos = _this.getFilteredTodos();
+			$('#todo-list').html(_this.todoTemplate(todos));
 			$('#main').toggle(todos.length > 0);
-			$('#toggle-all').prop('checked', this.getActiveTodos().length === 0);
-			this.renderFooter();
+			$('#toggle-all').prop('checked', _this.getActiveTodos().length === 0);
+			_this.renderFooter();
 			$('#new-todo').focus();
-			util.store('todos-jquery', this.todos);
 		},
 		renderFooter: function () {
-			var todoCount = this.todos.length;
-			var activeTodoCount = this.getActiveTodos().length;
-			var template = this.footerTemplate({
+			var todoCount = _this.todos.length;
+			var activeTodoCount = _this.getActiveTodos().length;
+			var template = _this.footerTemplate({
 				activeTodoCount: activeTodoCount,
 				activeTodoWord: util.pluralize(activeTodoCount, 'item'),
 				completedTodos: todoCount - activeTodoCount,
-				filter: this.filter
+				filter: _this.filter
 			});
 
-			$('#footer').toggle(todoCount > 0).html(template);
+			$('#footer').html(template);
 		},
 		toggleAll: function (e) {
 			var isChecked = $(e.target).prop('checked');
 
-			this.todos.forEach(function (todo) {
+			_this.todos.forEach(function (todo) {
 				todo.completed = isChecked;
 			});
 
-			this.render();
+			_this.render();
 		},
 		getActiveTodos: function () {
-			return this.todos.filter(function (todo) {
+			return _this.todos.filter(function (todo) {
 				return !todo.completed;
 			});
 		},
 		getCompletedTodos: function () {
-			return this.todos.filter(function (todo) {
+			return _this.todos.filter(function (todo) {
 				return todo.completed;
 			});
 		},
 		getFilteredTodos: function () {
-			if (this.filter === 'active') {
-				return this.getActiveTodos();
+			if (_this.filter === 'active') {
+				return _this.getActiveTodos();
 			}
 
-			if (this.filter === 'completed') {
-				return this.getCompletedTodos();
+			if (_this.filter === 'completed') {
+				return _this.getCompletedTodos();
 			}
 
-			return this.todos;
+			return _this.todos;
 		},
 		destroyCompleted: function () {
-			this.todos = this.getActiveTodos();
-			this.filter = 'all';
-			this.render();
+			console.log("destroy")
+			_this.todos = _this.getActiveTodos();
+			_this.filter = 'all';
+			_this.render();
 		},
 		// accepts an element from inside the `.item` div and
 		// returns the corresponding index in the `todos` array
 		indexFromEl: function (el) {
-			var id = $(el).closest('li').data('id');
-			var todos = this.todos;
+			var id = $(el).closest('li').attr('data-id');
+			var todos = _this.todos;
 			var i = todos.length;
 
 			while (i--) {
@@ -140,20 +170,56 @@ jQuery(function ($) {
 				return;
 			}
 
-			this.todos.push({
-				id: util.uuid(),
+			var new_todo = {
+            	id: util.uuid(),
 				title: val,
 				completed: false
-			});
+            };
 
-			$input.val('');
-
-			this.render();
+			$.ajax({
+                url : '/todo/add',
+                type : 'put',
+                data : new_todo,
+                dataType : 'json',
+                success : function(result) {
+          			if(result.success ){
+          				_this.todos.push(new_todo);
+						$input.val('');
+						_this.render();
+          			}else{
+          				self.tip(result.msg);
+          			}
+                },
+                error : function() {
+                	self.tip("error to create todo");
+                }
+            });
 		},
 		toggle: function (e) {
-			var i = this.indexFromEl(e.target);
-			this.todos[i].completed = !this.todos[i].completed;
-			this.render();
+			var i = _this.indexFromEl(e.target);
+			_this.todos[i].completed = !_this.todos[i].completed;
+			var completed = _this.todos[i].completed
+			var id = _this.todos[i].id
+
+			$.ajax({
+                url : '/todo/complete',
+                type : 'post',
+                data : {
+                	id: id,
+                	completed: completed
+                },
+                dataType : 'json',
+                success : function(result) {
+          			if(result.success ){
+						_this.render();
+          			}else{
+          				self.tip(result.msg);
+          			}
+                },
+                error : function() {
+                	self.tip("error to mark todo completed status");
+                }
+            });
 		},
 		edit: function (e) {
 			var $input = $(e.target).closest('li').addClass('editing').find('.edit');
@@ -174,23 +240,56 @@ jQuery(function ($) {
 			var val = $el.val().trim();
 
 			if (!val) {
-				this.destroy(e);
+				_this.destroy(e);
 				return;
 			}
 
 			if ($el.data('abort')) {
 				$el.data('abort', false);
 			} else {
-				this.todos[this.indexFromEl(el)].title = val;
+				console.log(_this.indexFromEl(el))
+
+				_this.todos[_this.indexFromEl(el)].title = val;
 			}
 
-			this.render();
+			_this.render();
 		},
-		destroy: function (e) {
-			this.todos.splice(this.indexFromEl(e.target), 1);
-			this.render();
-		}
-	};
 
-	App.init();
-});
+		destroy: function (e) {
+			var index  = _this.indexFromEl(e.target);
+			var todo = _this.todos[index];
+			var id = todo.id;
+
+			$.ajax({
+                url : '/todo/delete/' + id,
+                type : 'post',
+                data : {
+                	todoId: id
+                },
+                dataType : 'json',
+                success : function(result) {
+          			if(result.success ){
+						_this.todos.splice(index, 1);
+						_this.render();
+          			}else{
+          				self.tip(result.msg);
+          			}
+                },
+                error : function() {
+                	self.tip("error to delete todo");
+                }
+            });
+		},
+
+        formatDate: function (now) {
+            var year = now.getFullYear();
+            var month = now.getMonth() + 1;
+            var date = now.getDate();
+            var hour = now.getHours();
+            var minute = now.getMinutes();
+            var second = now.getSeconds();
+            if (second < 10) second = "0" + second;
+            return year + "-" + month + "-" + date + " " + hour + ":" + minute + ":" + second;
+        }
+    };
+}(Lor));

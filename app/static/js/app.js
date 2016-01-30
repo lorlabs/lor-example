@@ -62,7 +62,6 @@ var util = {
           				self.todos = result.data;
           				self.filter = filter
           				self.render();
-          				self.renderFooter();
           			}else{
           				self.tip(result.msg);
           			}
@@ -103,11 +102,12 @@ var util = {
 		},
 		renderFooter: function () {
 			var todoCount = _this.todos.length;
-			var activeTodoCount = _this.getActiveTodos().length;
+			var activeTodoCount = $("#todo-list").children().length;
+			console.log("todoCount", todoCount, "activeTodoCount", activeTodoCount)
+
 			var template = _this.footerTemplate({
 				activeTodoCount: activeTodoCount,
 				activeTodoWord: util.pluralize(activeTodoCount, 'item'),
-				completedTodos: todoCount - activeTodoCount,
 				filter: _this.filter
 			});
 
@@ -249,10 +249,33 @@ var util = {
 			} else {
 				console.log(_this.indexFromEl(el))
 
-				_this.todos[_this.indexFromEl(el)].title = val;
-			}
+				var index  = _this.indexFromEl(el);
+				
+				
+				var todo = _this.todos[index];
+				var id = todo.id;
 
-			_this.render();
+				$.ajax({
+	                url : '/todo/update',
+	                type : 'post',
+	                data : {
+	                	id: id,
+	                	title: val
+	                },
+	                dataType : 'json',
+	                success : function(result) {
+	          			if(result.success ){
+							_this.todos[index].title = val;
+							_this.render();
+	          			}else{
+	          				self.tip(result.msg);
+	          			}
+	                },
+	                error : function() {
+	                	self.tip("error to update todo");
+	                }
+	            });
+			}
 		},
 
 		destroy: function (e) {
@@ -262,7 +285,7 @@ var util = {
 
 			$.ajax({
                 url : '/todo/delete/' + id,
-                type : 'post',
+                type : 'delete',
                 data : {
                 	todoId: id
                 },

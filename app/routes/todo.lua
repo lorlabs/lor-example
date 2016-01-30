@@ -16,8 +16,6 @@ local todoRuter = lor:Router()
 
 -- PUT DELETE
 
--- req.params.id always be 1 when "POST"
-
 
 todoRuter:post("/complete", function(req, res, next)
 	local id = req.body.id
@@ -62,23 +60,27 @@ todoRuter:put("/add", function(req, res, next)
 	})
 end)
 
-todoRuter:post("/delete/:id", function(req, res, next)
+todoRuter:post("/update", function(req, res, next)
+	local id = req.body.id
+	local title = req.body.title
+
+	for i, v in ipairs(todos) do
+		if v.id == id then
+			v.title = title
+		end
+	end
+
+    res:json({
+		success = true,
+		msg = "update successful"
+	})
+end)
+
+todoRuter:delete("/delete/:id", function(req, res, next)
 	local id = req.params.id
-	local todoId = req.body.todoId
-
-	-- local todelete = nil
- --    for i, v in ipairs(todos) do
- --    	if v.id == id then
- --    		todelete = i
- --    	end
- --    end
-
- --    if todelete then
- --    	tremove(todos, todelete)
- --    end
 
  	for i=#todos, 1, -1 do 
-        if todos[i].id == todoId then 
+        if todos[i].id == id then 
             table.remove(todos,i) 
         end 
     end 
@@ -87,7 +89,6 @@ todoRuter:post("/delete/:id", function(req, res, next)
 		success = true,
 		msg = "delete successful",
 		data = {
-			todoId = todoId,
 			deleteId = id,
 			todosLength = #todos,
 			todos = todos

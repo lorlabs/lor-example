@@ -23,7 +23,7 @@ return function(app)
             name =  req.query.name or "lor",
             desc =   req.query.desc or 'a framework of lua based on OpenResty'
         }
-        res:render("index", data)
+        res:render("login", data)
     end)
 
 end

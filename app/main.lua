@@ -16,6 +16,7 @@ app:use(session_middleware())
 -- filter: add response header
 app:use(function(req, res, next)
     res:setHeader('X-Powered-By', 'Lor Framework')
+   
     next()
 end)
 

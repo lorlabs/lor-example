@@ -76,8 +76,8 @@ todoRuter:post("/update", function(req, res, next)
 	})
 end)
 
-todoRuter:delete("/delete/:id", function(req, res, next)
-	local id = req.params.id
+todoRuter:delete("/delete", function(req, res, next)
+	local id = req.body.todoId
 
  	for i=#todos, 1, -1 do 
         if todos[i].id == id then 

@@ -284,7 +284,7 @@ var util = {
 			var id = todo.id;
 
 			$.ajax({
-                url : '/todo/delete/' + id,
+                url : '/todo/delete',
                 type : 'delete',
                 data : {
                 	todoId: id

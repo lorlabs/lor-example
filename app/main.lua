@@ -15,7 +15,7 @@ app:use(session_middleware())
 
 -- filter: add response header
 app:use(function(req, res, next)
-    res:setHeader('X-Powered-By', 'Lor Framework')
+    res:set_header('X-Powered-By', 'Lor Framework')
    
     next()
 end)
@@ -27,7 +27,7 @@ router(app) -- business routers and routes
 
 -- 404 error
 app:use(function(req, res, next)
-    if req:isFound() ~= true then
+    if req:is_found() ~= true then
         res:status(404):send("404! sorry, page not found.")
     end
 end)

@@ -3,12 +3,10 @@ local ipairs = ipairs
 local lor = require("lor.index")
 local errorRouter = lor:Router()
 
-
 errorRouter:get("/", function(req, res, next)
     res:render("error", {
     	msg = req.query.errMsg -- injected by the invoke request
     })
 end)
-
 
 return errorRouter

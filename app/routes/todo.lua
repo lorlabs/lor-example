@@ -6,17 +6,6 @@ local lor = require("lor.index")
 local todos = require("app.model.todo")
 local todoRuter = lor:Router()
 
-
--- TODO:
-
--- cause error route to mathc /find/all
--- todoRuter:get("/all", function(req, res, next)
---     res:json(todos)
--- end)
-
--- PUT DELETE
-
-
 todoRuter:post("/complete", function(req, res, next)
 	local id = req.body.id
 	local completed = req.body.completed
@@ -125,13 +114,11 @@ todoRuter:get("/find/:filter", function(req, res, next)
 	end
 end)
 
-
 todoRuter:get("/index", function(req, res, next)
     local data = {
         username =  req.session.get("username")
     }
     res:render("todo", data)
 end)
-
 
 return todoRuter

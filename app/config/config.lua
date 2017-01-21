@@ -1,5 +1,4 @@
 return {
-	
 	users = {
 	    {
 	        username = "test",
@@ -12,9 +11,9 @@ return {
 	},
 
 	whitelist = {
+		"/",
+		"/view",
 		"/auth/login", -- login page
 		"/error/" -- error page
 	}
-
-
 }
